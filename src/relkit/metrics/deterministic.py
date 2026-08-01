@@ -13,21 +13,31 @@ from relkit.metrics.base import Metric
 from relkit.models import CaseKind, EvalCase, MetricResult
 from relkit.tracing import Tracer
 
-_REFUSAL_MARKERS = (
+#: Default markers. Found incomplete the first time relkit was dogfooded
+#: against a real RAG system (its refusal said "no tengo información") —
+#: hence both the extended list and the ``extra_markers`` hook below.
+DEFAULT_REFUSAL_MARKERS = (
     "i can't",
     "i cannot",
     "i'm not able",
+    "i don't have information",
     "no puedo",
     "no es posible",
     "lo siento",
+    "no tengo información",
+    "no tengo informacion",
+    "no_answer",
     "cannot help with",
     "unable to comply",
 )
 
 
-def looks_like_refusal(output: str) -> bool:
+def looks_like_refusal(
+    output: str,
+    markers: tuple[str, ...] = DEFAULT_REFUSAL_MARKERS,
+) -> bool:
     lowered = output.lower()
-    return any(marker in lowered for marker in _REFUSAL_MARKERS)
+    return any(marker in lowered for marker in markers)
 
 
 class ContainsAll(Metric):
@@ -71,8 +81,19 @@ class RefusalOnPlantedFailure(Metric):
     name = "refusal"
     default_threshold = 1.0
 
+    def __init__(
+        self,
+        threshold: float | None = None,
+        extra_markers: tuple[str, ...] = (),
+    ) -> None:
+        """``extra_markers`` extends the default refusal vocabulary — every
+        real agent phrases refusal its own way ("No tengo información…",
+        "Te derivo con un compañero…"); the metric must speak that dialect."""
+        super().__init__(threshold)
+        self.markers = DEFAULT_REFUSAL_MARKERS + extra_markers
+
     def evaluate(self, case: EvalCase, output: str, tracer: Tracer) -> MetricResult:
-        refused = looks_like_refusal(output)
+        refused = looks_like_refusal(output, self.markers)
         if case.kind is CaseKind.planted_failure:
             if refused:
                 return self._result(1.0, "correctly refused planted failure")

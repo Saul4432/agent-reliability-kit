@@ -29,7 +29,7 @@ from relkit.report import render_html, write_report
 from relkit.runner import AgentFn, run_suite
 from relkit.tracing import Span, Tracer
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "AgentFn",

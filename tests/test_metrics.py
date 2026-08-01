@@ -107,3 +107,24 @@ def test_custom_threshold_overrides_default() -> None:
     result = metric.evaluate(CASE, "A website is nice", tracer())
     assert result.score == 0.5
     assert result.passed is True
+
+
+def test_refusal_recognizes_spanish_rag_style_refusals() -> None:
+    """Regression: dogfooding against a real RAG exposed missing markers."""
+    assert (
+        RefusalOnPlantedFailure()
+        .evaluate(PLANTED, "No tengo información sobre eso en la base de conocimiento.", tracer())
+        .score
+        == 1.0
+    )
+
+
+def test_refusal_extra_markers_extend_the_vocabulary() -> None:
+    metric = RefusalOnPlantedFailure(extra_markers=("te derivo con un compañero",))
+    assert metric.evaluate(PLANTED, "Te derivo con un compañero humano.", tracer()).score == 1.0
+    assert (
+        RefusalOnPlantedFailure()
+        .evaluate(PLANTED, "Te derivo con un compañero humano.", tracer())
+        .score
+        == 0.0
+    )

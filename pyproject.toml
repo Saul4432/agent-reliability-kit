@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-reliability-kit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Observability, planted-failure evals and CI quality gates for LLM agents."
 readme = "README.md"
 license = "MIT"
